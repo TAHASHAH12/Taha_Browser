@@ -3,6 +3,7 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 const { app, dialog, net } = require('electron');
 const data = require('./data');
+const { GOOGLE_SIGN_IN_HOST, FIREFOX_USER_AGENT } = require('./urls');
 
 const PAGES_DIR = path.join(__dirname, '..', 'pages');
 const PAGES = new Set(['newtab', 'history', 'bookmarks', 'error']);
@@ -48,6 +49,18 @@ function originOf(url) {
 // hooks.onDownloadStarted(webContents)
 function setupSession(ses, hooks) {
   ses.protocol.handle('taha', serveInternalPage);
+
+  // Request headers for Google sign-in; the page's own view of the browser is
+  // switched per tab (see TahaWindow.syncUserAgent).
+  ses.webRequest.onBeforeSendHeaders({ urls: [`https://${GOOGLE_SIGN_IN_HOST}/*`] }, (details, callback) => {
+    const headers = {};
+    for (const [name, value] of Object.entries(details.requestHeaders)) {
+      // Firefox sends no client hints, so their presence would give us away.
+      if (!/^sec-ch-ua/i.test(name) && !/^user-agent$/i.test(name)) headers[name] = value;
+    }
+    headers['User-Agent'] = FIREFOX_USER_AGENT;
+    callback({ requestHeaders: headers });
+  });
 
   const decisions = new Map(); // "origin|permission" -> boolean, for this run
   ses.setPermissionCheckHandler((_wc, permission, requestingOrigin) => {

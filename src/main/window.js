@@ -188,8 +188,18 @@ class TahaWindow {
   }
 
   load(tab, url) {
+    this.syncUserAgent(tab, url);
     // Failures are reported through 'did-fail-load'.
     tab.wc.loadURL(url).catch(() => {});
+  }
+
+  // Makes the tab identify as Firefox while on Google's sign-in host and as
+  // itself everywhere else. Returns true if the identity had to change.
+  syncUserAgent(tab, url) {
+    const wanted = urls.isGoogleSignIn(url) ? urls.FIREFOX_USER_AGENT : app.userAgentFallback;
+    if (tab.wc.getUserAgent() === wanted) return false;
+    tab.wc.setUserAgent(wanted);
+    return true;
   }
 
   wireTab(tab) {
@@ -213,6 +223,9 @@ class TahaWindow {
     wc.on('did-navigate', (_event, url) => {
       tab.committed = true;
       tab.favicon = null;
+      // Reached by a link or redirect with the wrong identity: load it again
+      // so the page's scripts see the same browser its requests claimed.
+      if (this.syncUserAgent(tab, url)) wc.reload();
       if (urls.failedUrl(url) !== null) this.dropFailedEntry(tab);
       else record(url);
       update();

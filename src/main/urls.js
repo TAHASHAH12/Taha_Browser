@@ -9,6 +9,25 @@ const SEARCH_ENGINES = {
   bing: { name: 'Bing', url: 'https://www.bing.com/search?q=%s' },
 };
 
+// Google refuses sign-in from Chromium-based apps it does not recognise as
+// Chrome ("This browser or app may not be secure"), but accepts Firefox. So a
+// tab presents as Firefox on the sign-in host, and only on that host.
+const GOOGLE_SIGN_IN_HOST = 'accounts.google.com';
+const FIREFOX_PLATFORM = {
+  darwin: 'Macintosh; Intel Mac OS X 10.15',
+  win32: 'Windows NT 10.0; Win64; x64',
+}[process.platform] || 'X11; Linux x86_64';
+const FIREFOX_USER_AGENT = `Mozilla/5.0 (${FIREFOX_PLATFORM}; rv:140.0) Gecko/20100101 Firefox/140.0`;
+
+function isGoogleSignIn(url) {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === 'https:' && hostname === GOOGLE_SIGN_IN_HOST;
+  } catch {
+    return false;
+  }
+}
+
 const isWebUrl = (url) => /^https?:\/\//i.test(url);
 const isInternalUrl = (url) => url.startsWith('taha://');
 
@@ -61,6 +80,9 @@ module.exports = {
   BOOKMARKS_URL,
   ERROR_PAGE_PREFIX,
   SEARCH_ENGINES,
+  GOOGLE_SIGN_IN_HOST,
+  FIREFOX_USER_AGENT,
+  isGoogleSignIn,
   isWebUrl,
   isInternalUrl,
   resolveInput,

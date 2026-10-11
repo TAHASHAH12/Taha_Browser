@@ -83,6 +83,13 @@ of every message.
 
 Profile data lives in `~/Library/Application Support/Taha` on macOS.
 
+## Google sign-in
+
+Google rejects sign-in from Chromium-based apps it does not recognise as Chrome ("This browser or app
+may not be secure"). As a workaround, a tab identifies as Firefox while it is on `accounts.google.com`,
+and as itself everywhere else. This is not something Google supports, so it can stop working at any
+time; if it does, sign-in will show that message again.
+
 ## Not included
 
 Extensions, sync, a password manager, session restore, and pop-ups that need to talk back to the page
